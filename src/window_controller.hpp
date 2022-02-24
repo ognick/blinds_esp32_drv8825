@@ -1,13 +1,16 @@
 #pragma once
 
+#include "global_config.hpp"
+
 #include <IRrecv.h>
 #include <IRutils.h>
+
 
 class WindowControllerClass
 {
 public:
     WindowControllerClass();
-    void setup();
+    void setup(const GlobalConfig& config);
     bool loop();
 
 private:

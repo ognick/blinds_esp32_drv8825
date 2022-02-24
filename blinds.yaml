@@ -4,6 +4,19 @@ esphome:
   board: esp32doit-devkit-v1
   includes:
     - esphome_blind_component.h
+    - src/global_config.hpp
+    - src/window_controller.hpp
+    - src/window_controller.cpp
+    - src/window.hpp
+    - src/window.cpp
+    - src/remote.hpp
+    - src/remote.cpp
+    - src/led.hpp
+    - src/led.cpp
+    - src/storage.hpp
+    - src/storage.cpp
+    - src/blind.hpp
+    - src/blind.cpp
   libraries:
     - "IRremoteESP8266"
     - "EEPROM"
@@ -36,5 +49,6 @@ captive_portal:
 
 custom_component:
 - lambda: |-
-    auto esphome_blind_component = new EsphomeBlindComponent();
+    GlobalConfig config;
+    auto esphome_blind_component = new EsphomeBlindComponent(config);
     return {esphome_blind_component};

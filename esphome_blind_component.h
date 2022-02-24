@@ -3,22 +3,12 @@
 #include "window_controller.hpp"
 #include "window.hpp"
 #include "remote.hpp"
+#include "global_config.hpp"
 
-#include <esp_task_wdt.h>
 #include <sstream>
 
 #define NO_INTERRUPTED_LOOP_DELAY_MS 800
 #define AWAIT_LOOP_DELAY_MS 1000
-#define TEMP_SEND_PERIOD_MS 1000
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
-uint8_t temprature_sens_read();
 
 
 static SemaphoreHandle_t blind_mutex;
@@ -39,9 +29,7 @@ void run_task(void *params)
       done = WindowController.loop();
       xSemaphoreGive(blind_mutex);
 
-      uint32_t now_ms = millis();
-      // Serial.println(String(now_ms-timer_ms) + " ms. " + String(portTICK_PERIOD_MS));
-      // timer_ms = now_ms;
+      const uint32_t now_ms = millis();
 
       if (done)
       {
@@ -56,20 +44,25 @@ void run_task(void *params)
 }
 
 class EsphomeBlindComponent : public Component, public CustomMQTTDevice {
+ 
  std::vector<String> logs;
  SemaphoreHandle_t log_mutex;
- uint32_t temp_timer_ms = 0;
+ std::vector<uint8_t> opent_percents;
+const GlobalConfig& config;
+
  public:
+  EsphomeBlindComponent(const GlobalConfig& config)
+    :config(config)
+  {
+  }
+  
   void setup() override 
   {
-    // esp_task_wdt_init(60, true);
     blind_mutex = xSemaphoreCreateMutex();
     log_mutex = xSemaphoreCreateMutex();
      
-    WindowController.setup();
+    WindowController.setup(config);
     Remote.register_print_output([this](const String &data){
-      // ESP_LOGD("blind", data.c_str());
-      Serial.println(data.c_str());
       xSemaphoreTake(log_mutex, portMAX_DELAY);
       logs.push_back(data);
       xSemaphoreGive(log_mutex);
@@ -95,38 +88,8 @@ class EsphomeBlindComponent : public Component, public CustomMQTTDevice {
     xSemaphoreGive(blind_mutex);
   }
 
-  void send_temp()
-  {
-      const static uint32_t values_size = 10;
-      static std::vector<uint8_t> values(values_size);
-      static uint8_t i = 0;
-      uint32_t now = millis();
-      if (now - temp_timer_ms > TEMP_SEND_PERIOD_MS)
-      {
-        temp_timer_ms = now;
-        int32_t temp = (temprature_sens_read() - 32) / 1.8;
-        values[(i++) % values_size] = temp;
-   
-        if (i % values_size == 0)
-        {
-          uint32_t sum = 0;
-          for (auto t : values) 
-          {
-              sum += t;
-          }
-
-          std::ostringstream msg;
-          msg << sum / values_size;
-
-          publish("room/temp/blinds", msg.str().c_str());
-          // Remote.print(msg.str().c_str());
-        }
-      }
-  }
-
   void send_open_state()
   {
-      static std::vector<uint8_t> opent_percents = {101, 101, 101};
       const std::vector<uint8_t>& percents = Window.get_open_percents();
       if (percents != opent_percents)
       {
@@ -159,7 +122,6 @@ class EsphomeBlindComponent : public Component, public CustomMQTTDevice {
         xSemaphoreGive(log_mutex);
 
         send_open_state();
-        // send_temp();
       }
       vTaskDelay(AWAIT_LOOP_DELAY_MS / portTICK_PERIOD_MS);
   } 

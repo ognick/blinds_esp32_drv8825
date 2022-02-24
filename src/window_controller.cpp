@@ -58,7 +58,7 @@ WindowControllerClass::WindowControllerClass()
 {
 }
 
-void WindowControllerClass::setup()
+void WindowControllerClass::setup(const GlobalConfig& config)
 {
     Serial.begin(115200);
     Led.init(LED_PIN);
@@ -82,6 +82,13 @@ void WindowControllerClass::setup()
     });
     Storage.init();
     ir.enableIRIn();
+
+    // TODO: use global config
+    // for (const auto& c : config.blinds)
+    // {
+    //    Window.add_blind(c.step_pin, c.direction_pin, c.enable_pin, c.reversed);
+    // }
+
     Window.add_blind(LEFT_STEP_PIN, LEFT_DIRECTION_PIN, LEFT_ENABLE_PIN, false);
     Window.add_blind(CENTER_STEP_PIN, CENTER_DIRECTION_PIN, CENTER_ENABLE_PIN, false);
     Window.add_blind(RIGHT_STEP_PIN, RIGHT_DIRECTION_PIN, RIGHT_ENABLE_PIN, true);
