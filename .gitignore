@@ -1,0 +1,5 @@
+**/_build
+.vscode/**
+.esphome/**
+.DS_Store
+secrets.yaml

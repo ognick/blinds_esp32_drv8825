@@ -1,0 +1,40 @@
+esphome:
+  name: blinds
+  platform: ESP32
+  board: esp32doit-devkit-v1
+  includes:
+    - esphome_blind_component.h
+  libraries:
+    - "IRremoteESP8266"
+    - "EEPROM"
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  reboot_timeout: 1min
+
+# Enable logging
+logger:
+
+ota:
+  password: !secret ota_password
+  reboot_timeout: 30s
+
+wifi:
+  ssid: !secret ota_ssid
+  password: !secret ota_password
+  reboot_timeout: 30s
+  fast_connect: true
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Blind Fallback Hotspot"
+    password: "Z5tAzhFML2YG"
+
+captive_portal:
+
+custom_component:
+- lambda: |-
+    auto esphome_blind_component = new EsphomeBlindComponent();
+    return {esphome_blind_component};
